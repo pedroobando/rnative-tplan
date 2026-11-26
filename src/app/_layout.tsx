@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { SplashScreen, Tabs, ThemeProvider } from 'expo-router';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
+import { useDatabaseMigrations } from '@/core/db';
 import '@/global.css';
 import { useAppNavigationTheme, useThemeColor } from '@/hooks';
 
@@ -19,9 +20,22 @@ export default function RootLayout() {
   const inactiveTintColor = useThemeColor(undefined, 'text');
   const borderColor = useThemeColor(undefined, 'border');
 
+  // Las tablas deben existir antes de mostrar cualquier pantalla que consulte core.
+  const { success, error } = useDatabaseMigrations();
+
   useEffect(() => {
-    SplashScreen.hideAsync();
-  }, []);
+    if (success || error) {
+      SplashScreen.hideAsync();
+    }
+  }, [success, error]);
+
+  if (error) {
+    throw error;
+  }
+
+  if (!success) {
+    return null;
+  }
 
   return (
     <GestureHandlerRootView style={{ backgroundColor, flex: 1 }}>
@@ -45,6 +59,16 @@ export default function RootLayout() {
               title: 'Inicio',
               tabBarIcon: ({ color, size }) => (
                 <Ionicons name="home-outline" size={size} color={color as string} />
+              ),
+            }}
+          />
+
+          <Tabs.Screen
+            name="weeks"
+            options={{
+              title: 'Plan',
+              tabBarIcon: ({ color, size }) => (
+                <Ionicons name="calendar-outline" size={size} color={color as string} />
               ),
             }}
           />

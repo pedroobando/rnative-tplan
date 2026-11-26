@@ -1,77 +1,105 @@
-import { useMemo, useState } from 'react';
-import { FlatList, StyleSheet, View } from 'react-native';
+import { useCallback, useMemo, useState } from 'react';
+import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { PlanEmptyState, PlanErrorState, PlanLoadingState } from '@/components/weeks/plan-state';
 import { WeekCard } from '@/components/weeks/week-card';
+import { WeekSelector } from '@/components/weeks/week-selector';
 import { ThemedText } from '@/components/themed/themed-text';
 import { ThemedView } from '@/components/themed/themed-view';
 import { useWeeksPlan } from '@/hooks';
 
 export default function WeeksScreen() {
-  const { weeks, loading, error, reload } = useWeeksPlan();
+  const {
+    weeks,
+    selectedWeek,
+    selectedWeekId,
+    selectWeek,
+    loading,
+    error,
+    reload,
+  } = useWeeksPlan();
 
-  // Elección explícita del usuario sobre qué días están desplegados. Se guarda
-  // junto a una "firma" del plan: si los datos cambian (por ejemplo tras un
-  // `reload`), la firma cambia y la elección se descarta, de modo que el
-  // estado expandido vuelve a derivarse del plan nuevo en lugar de conservar
-  // ids de días que ya no existen.
-  const planSignature = useMemo(
-    () =>
-      weeks
-        .map(
-          (week) =>
-            `${week.id}#${week.days.map((day) => `${day.id}:${day.blocks.length}`).join('|')}`,
-        )
-        .join(';'),
-    [weeks],
+  // Estado de días desplegado POR SEMANA: guarda, para cada semana, los ids
+  // de los días que el usuario ha desplegado o plegado. Así cada semana
+  // conserva su propio estado y al cambiar de selección no se arrastran ids
+  // de días de otra semana.
+  const [expandedByWeek, setExpandedByWeek] = useState<Record<string, string[]>>({});
+
+  // Días desplegados de la semana visible: si el usuario ya ha tocado esa
+  // semana se respeta su elección (ignorando ids que ya no existen); si no,
+  // se despliega por defecto el PRIMER DÍA CON BLOQUES de la semana.
+  const expandedDayIds = useMemo(() => {
+    if (!selectedWeek) {
+      return [];
+    }
+
+    const validDayIds = new Set(selectedWeek.days.map((day) => day.id));
+    const stored = expandedByWeek[selectedWeek.id];
+
+    if (stored) {
+      return stored.filter((dayId) => validDayIds.has(dayId));
+    }
+
+    const firstDayWithBlocks = selectedWeek.days.find((day) => day.blocks.length > 0);
+
+    return firstDayWithBlocks ? [firstDayWithBlocks.id] : [];
+  }, [selectedWeek, expandedByWeek]);
+
+  const toggleDay = useCallback(
+    (dayId: string) => {
+      if (!selectedWeek) {
+        return;
+      }
+
+      setExpandedByWeek((previous) => {
+        const validDayIds = new Set(selectedWeek.days.map((day) => day.id));
+        const stored = previous[selectedWeek.id];
+        const base = stored
+          ? stored.filter((id) => validDayIds.has(id))
+          : (() => {
+              const firstDayWithBlocks = selectedWeek.days.find((day) => day.blocks.length > 0);
+
+              return firstDayWithBlocks ? [firstDayWithBlocks.id] : [];
+            })();
+
+        const next = base.includes(dayId) ? base.filter((id) => id !== dayId) : [...base, dayId];
+
+        return { ...previous, [selectedWeek.id]: next };
+      });
+    },
+    [selectedWeek],
   );
 
-  const [userExpanded, setUserExpanded] = useState<{ signature: string; dayIds: string[] } | null>(
-    null,
-  );
+  // Días de entrenamiento de la semana visible (para el resumen de la cabecera).
+  const trainingDays = useMemo(() => {
+    if (!selectedWeek) {
+      return 0;
+    }
 
-  // Estado por defecto: el PRIMER DÍA CON BLOQUES DE CADA SEMANA (uno por
-  // semana), no solo el de la primera semana.
-  const defaultExpandedDayIds = useMemo(
-    () =>
-      weeks.flatMap((week) => {
-        const firstDayWithBlocks = week.days.find((day) => day.blocks.length > 0);
+    return selectedWeek.days.filter((day) => day.dayType === 'training').length;
+  }, [selectedWeek]);
 
-        return firstDayWithBlocks ? [firstDayWithBlocks.id] : [];
-      }),
-    [weeks],
-  );
+  // Resumen de la cabecera: cuántas semanas tiene el plan y cuántos días de
+  // entrenamiento tiene la semana visible.
+  const summary = useMemo(() => {
+    if (!selectedWeek) {
+      return null;
+    }
 
-  const visibleExpandedDayIds =
-    userExpanded && userExpanded.signature === planSignature
-      ? userExpanded.dayIds
-      : defaultExpandedDayIds;
+    const weekCount = `${weeks.length} ${weeks.length === 1 ? 'semana' : 'semanas'}`;
+    const dayCount = `${trainingDays} ${
+      trainingDays === 1 ? 'día de entrenamiento' : 'días de entrenamiento'
+    }`;
 
-  const toggleDay = (dayId: string) => {
-    const base =
-      userExpanded && userExpanded.signature === planSignature
-        ? userExpanded.dayIds
-        : defaultExpandedDayIds;
+    return `${weekCount} en el plan · ${dayCount} en esta semana`;
+  }, [weeks.length, trainingDays, selectedWeek]);
 
-    const next = base.includes(dayId) ? base.filter((id) => id !== dayId) : [...base, dayId];
-
-    setUserExpanded({ signature: planSignature, dayIds: next });
-  };
-
-  const trainingDays = useMemo(
-    () =>
-      weeks.reduce(
-        (total, week) => total + week.days.filter((day) => day.dayType === 'training').length,
-        0,
-      ),
-    [weeks],
-  );
-
-  // La lista es siempre la misma: solo cambia lo que se muestra cuando no hay
-  // semanas (cargando, error o vacío).
+  // El contenido es siempre el mismo: solo cambia lo que se muestra cuando no
+  // hay semanas (cargando, error o vacío). Si ya hay datos de una carga
+  // anterior, se siguen mostrando mientras se releen.
   const emptyState = error ? (
     <PlanErrorState error={error} onRetry={reload} />
-  ) : loading ? (
+  ) : loading && selectedWeek === null ? (
     <PlanLoadingState />
   ) : (
     <PlanEmptyState />
@@ -79,28 +107,33 @@ export default function WeeksScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <FlatList
-        data={weeks}
-        keyExtractor={(week) => week.id}
-        renderItem={({ item }) => (
-          <WeekCard week={item} expandedDayIds={visibleExpandedDayIds} onToggleDay={toggleDay} />
+      <ScrollView contentContainerStyle={styles.content}>
+        <View style={styles.header}>
+          <ThemedText type="subtitle">Plan</ThemedText>
+
+          {weeks.length > 0 ? (
+            <WeekSelector weeks={weeks} selectedWeekId={selectedWeekId} onSelect={selectWeek} />
+          ) : null}
+
+          {weeks.length > 0 && summary ? (
+            <ThemedText type="small" style={styles.summary}>
+              {summary}
+            </ThemedText>
+          ) : null}
+        </View>
+
+        {selectedWeek ? (
+          <WeekCard
+            week={selectedWeek}
+            expandedDayIds={expandedDayIds}
+            onToggleDay={toggleDay}
+            // El nombre de la semana ya está en el selector de la cabecera.
+            showTitle={false}
+          />
+        ) : (
+          emptyState
         )}
-        ListHeaderComponent={
-          <View style={styles.header}>
-            <ThemedText type="subtitle">Plan</ThemedText>
-            {!loading && !error ? (
-              <ThemedText type="small" style={styles.summary}>
-                {`${weeks.length} ${weeks.length === 1 ? 'semana' : 'semanas'} · ${trainingDays} ${
-                  trainingDays === 1 ? 'día de entrenamiento' : 'días de entrenamiento'
-                }`}
-              </ThemedText>
-            ) : null}
-          </View>
-        }
-        ListEmptyComponent={emptyState}
-        contentContainerStyle={styles.content}
-        removeClippedSubviews={false}
-      />
+      </ScrollView>
     </ThemedView>
   );
 }
@@ -115,7 +148,7 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
   },
   header: {
-    gap: 4,
+    gap: 8,
     marginBottom: 4,
   },
   summary: {

@@ -22,6 +22,7 @@ export {
   type PlanErrorStateProps,
 } from '@/components/weeks/plan-state';
 export { WeekCard, type WeekCardProps } from '@/components/weeks/week-card';
+export { WeekSelector, type WeekSelectorProps } from '@/components/weeks/week-selector';
 export {
   WorkoutBlockRow,
   type WorkoutBlockRowProps,

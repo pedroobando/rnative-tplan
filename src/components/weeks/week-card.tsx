@@ -16,17 +16,30 @@ export type WeekCardProps = {
   expandedDayIds: string[];
   /** Callback al plegar/desplegar un día. */
   onToggleDay: (dayId: string) => void;
+  /**
+   * Muestra el nombre de la semana en la cabecera de la tarjeta.
+   *
+   * Por defecto es `true`. En la pantalla Plan se pasa `false` porque el
+   * nombre ya aparece en el selector de la cabecera: mostrarlo dos veces
+   * seguidas es ruido visual.
+   */
+  showTitle?: boolean;
 };
 
 /** Tarjeta de una semana con su cabecera y la lista de días. */
-export function WeekCard({ week, expandedDayIds, onToggleDay }: WeekCardProps) {
+export function WeekCard({
+  week,
+  expandedDayIds,
+  onToggleDay,
+  showTitle = true,
+}: WeekCardProps) {
   const border = useThemeColor(undefined, 'border');
   const primary = useThemeColor(undefined, 'primary');
 
   return (
     <ThemedView style={[styles.card, { borderColor: border }]}>
       <View style={styles.header}>
-        <ThemedText type="semiBold">{week.name}</ThemedText>
+        {showTitle ? <ThemedText type="semiBold">{week.name}</ThemedText> : null}
         <ThemedText type="small" style={styles.range}>
           {formatDateRange(week.startDate, week.endDate)}
         </ThemedText>

@@ -30,11 +30,14 @@ export function WeekSelector({ weeks, selectedWeekId, onSelect }: WeekSelectorPr
 
   const primary = useThemeColor(undefined, 'primary');
   const border = useThemeColor(undefined, 'border');
-  const text = useThemeColor(undefined, 'text');
 
   const selectedWeek = weeks.find((week) => week.id === selectedWeekId) ?? null;
 
   const triggerLabel = selectedWeek ? selectedWeek.name : 'Elige una semana';
+  // Rango de fechas de la semana visible, a la derecha del nombre.
+  const triggerRange = selectedWeek
+    ? formatDateRange(selectedWeek.startDate, selectedWeek.endDate)
+    : null;
   const triggerAccessibilityLabel = selectedWeek
     ? `Semana seleccionada: ${selectedWeek.name}`
     : 'Seleccionar semana del plan';
@@ -48,26 +51,33 @@ export function WeekSelector({ weeks, selectedWeekId, onSelect }: WeekSelectorPr
 
   return (
     <>
+      {/* Botón principal del plan: relleno `primary` con sombra para que
+          destaque sobre el fondo neutro de la pantalla. El texto va en blanco
+          (no en `background`) porque en los temas oscuros el token `background`
+          es oscuro y perdería contraste sobre el morado del botón. */}
       <ThemedPress
-        type="default"
+        type="primary"
         onPress={() => setOpen(true)}
         accessibilityRole="button"
         accessibilityLabel={triggerAccessibilityLabel}
         accessibilityHint="Abre la lista de semanas del plan"
         accessibilityState={{ expanded: open }}
-        style={styles.trigger}>
-        <ThemedText type="semiBold" numberOfLines={1} style={styles.triggerText}>
+        className="rounded-xl"
+        style={[styles.trigger, { shadowColor: primary }]}
+      >
+        <ThemedText
+          type="semiBold"
+          numberOfLines={1}
+          style={[styles.triggerText, styles.onPrimary]}
+        >
           {triggerLabel}
         </ThemedText>
-        <Ionicons
-          name="chevron-down-outline"
-          size={20}
-          color={text}
-          style={styles.chevron}
-          accessible={false}
-          accessibilityElementsHidden
-          importantForAccessibility="no-hide-descendants"
-        />
+
+        {triggerRange ? (
+          <ThemedText type="small" numberOfLines={1} style={styles.triggerRange}>
+            {triggerRange}
+          </ThemedText>
+        ) : null}
       </ThemedPress>
 
       <Modal
@@ -75,15 +85,13 @@ export function WeekSelector({ weeks, selectedWeekId, onSelect }: WeekSelectorPr
         transparent
         animationType="fade"
         statusBarTranslucent
-        onRequestClose={close}>
+        onRequestClose={close}
+      >
         {/* Fondo oscurecido: se usa un color con alfa porque el tema no tiene
             un token para el overlay y no se puede derivar alfa de un token. */}
         <View style={styles.backdrop}>
           <PressableBackdrop onPress={close} />
-          <ThemedView
-            style={[styles.sheet, { borderColor: border }]}
-            accessibilityViewIsModal>
-
+          <ThemedView style={[styles.sheet, { borderColor: border }]} accessibilityViewIsModal>
             <ThemedText type="semiBold" style={styles.sheetTitle}>
               Semana del plan
             </ThemedText>
@@ -91,7 +99,8 @@ export function WeekSelector({ weeks, selectedWeekId, onSelect }: WeekSelectorPr
             <ScrollView
               style={styles.list}
               contentContainerStyle={styles.listContent}
-              showsVerticalScrollIndicator={false}>
+              showsVerticalScrollIndicator={false}
+            >
               {weeks.map((week) => {
                 const isSelected = week.id === selectedWeekId;
                 const range = formatDateRange(week.startDate, week.endDate);
@@ -105,12 +114,14 @@ export function WeekSelector({ weeks, selectedWeekId, onSelect }: WeekSelectorPr
                     accessibilityLabel={`${week.name}${range ? `. ${range}` : ''}`}
                     accessibilityHint="Selecciona esta semana del plan"
                     accessibilityState={{ selected: isSelected }}
-                    style={[styles.option, isSelected ? { borderColor: primary } : undefined]}>
+                    style={[styles.option, isSelected ? { borderColor: primary } : undefined]}
+                  >
                     <View style={styles.optionMain}>
                       <ThemedText
                         type={isSelected ? 'smallBold' : 'small'}
                         themeColor={isSelected ? 'primary' : undefined}
-                        numberOfLines={2}>
+                        numberOfLines={2}
+                      >
                         {week.name}
                       </ThemedText>
                       {range ? (
@@ -140,7 +151,8 @@ export function WeekSelector({ weeks, selectedWeekId, onSelect }: WeekSelectorPr
               onPress={close}
               accessibilityRole="button"
               accessibilityLabel="Cerrar la lista de semanas"
-              style={styles.close}>
+              style={styles.close}
+            >
               <ThemedText type="semiBold" themeColor="primary">
                 Cerrar
               </ThemedText>
@@ -166,15 +178,29 @@ function PressableBackdrop({ onPress }: { onPress: () => void }) {
 
 const styles = StyleSheet.create({
   trigger: {
-    minHeight: 48,
-    justifyContent: 'flex-start',
-    gap: 8,
+    minHeight: 56,
+    // El texto del nombre y el rango de fechas se reparten a los extremos.
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 12,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    // Sombra para dar volumen al botón sobre el fondo de la pantalla.
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 6,
   },
   triggerText: {
     flex: 1,
   },
-  chevron: {
-    opacity: 0.7,
+  // Texto sobre el relleno `primary`: blanco y con algo de transparencia.
+  onPrimary: {
+    color: '#ffffff',
+  },
+  triggerRange: {
+    color: 'rgba(255, 255, 255, 0.85)',
   },
   backdrop: {
     flex: 1,

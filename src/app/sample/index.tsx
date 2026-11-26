@@ -89,7 +89,7 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   list: {
-    gap: 12,
+    flex: 1,
   },
   card: {
     justifyContent: 'flex-start',

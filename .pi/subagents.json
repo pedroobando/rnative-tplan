@@ -1,0 +1,19 @@
+{
+  "toolDescriptionMode": "compact",
+  "workflowToolExposure": "skill",
+  "workflowsEnabled": false,
+  "disableDefaultAgents": true,
+  "fallbackSubagent": "none",
+  "maxSubagentDepth": 2,
+  "maxConcurrent": 3,
+  "maxConcurrentNested": 3,
+  "backgroundByDefault": true,
+  "rememberAgents": true,
+  "outputTranscript": true,
+  "reportUsage": true,
+  "showCost": true,
+  "widgetMode": "all",
+  "packageAgents": true,
+  "packageWorkflows": false,
+  "strictAgentFiles": true
+}

@@ -34,6 +34,23 @@ Run lint and typecheck before declaring any task done.
 Use EAS to build, sign, and submit the app in the cloud (`eas build`, `eas submit`) and to ship over-the-air updates (`eas update`) — no local Xcode or Android Studio required. Run EAS CLI as `bunx eas-cli <command>` in Bun projects, or `npx eas-cli@latest <command>` otherwise; substitute that for bare `eas` in docs examples.
 Docs: https://docs.expo.dev/eas/index.md
 
+## Agentes del proyecto (sub-agentes)
+
+Este repo define un equipo de sub-agentes en `.pi/agents/` (requiere la
+extensión `@tintinweb/pi-subagents`). Está prohibido inventarse nombres que
+no existan ahí.
+
+| Agente | Rol | Escribe |
+|---|---|---|
+| `orquestador` | Coordina al resto y entrega un informe único | No |
+| `arquitecto` | Diseño técnico: datos, rutas, capas | No |
+| `disenador` | Diseño de UI: pantallas, componentes, estados | No |
+| `implementador` | Escribe el código y verifica con `tsc` y `expo lint` | Sí |
+| `revisor` | Revisa el resultado | No |
+
+Uso típico: «usa el orquestador para añadir la pantalla de semana». El
+orquestador delega a los demás; solo `implementador` modifica archivos.
+
 ## Rules
 
 - If `ios/` and `android/` directories do not exist, they are generated (Continuous Native Generation). Never create or edit them by hand — configure native behavior in `app.json` and config plugins.

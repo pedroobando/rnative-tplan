@@ -64,6 +64,16 @@ export default function RootLayout() {
           />
 
           <Tabs.Screen
+            name="weeks"
+            options={{
+              title: 'Plan',
+              tabBarIcon: ({ color, size }) => (
+                <Ionicons name="calendar-outline" size={size} color={color as string} />
+              ),
+            }}
+          />
+
+          <Tabs.Screen
             name="themed"
             options={{
               title: 'Tema',

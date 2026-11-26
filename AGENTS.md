@@ -51,7 +51,25 @@ no existan ahí.
 Uso típico: «usa el orquestador para añadir la pantalla de semana». El
 orquestador delega a los demás; solo `implementador` modifica archivos.
 
+### Regla del branch (obligatoria)
+
+**Ningún trabajo que implique al orquestador empieza sin un branch de
+trabajo.** Antes de delegar:
+
+```bash
+git checkout -b feature/<slug-descriptivo>
+```
+
+- Nunca trabajes ni commitees en `main`.
+- El branch se crea una vez por tarea, antes de lanzar al orquestador.
+- Los sub-agentes no commitean: dejan los cambios en el working tree y
+  el commit lo hace el agente principal tras revisar el informe.
+
+
 ## Rules
+
+- **Nunca hagas commits.** El agente principal controla el histórico: deja
+  los cambios en el working tree y los reporta.
 
 - If `ios/` and `android/` directories do not exist, they are generated (Continuous Native Generation). Never create or edit them by hand — configure native behavior in `app.json` and config plugins.
 - Expo Go only includes its bundled native modules. After adding a library with native code, the app needs a development build: `npx expo run:ios|android` locally, or `eas build --profile development`.

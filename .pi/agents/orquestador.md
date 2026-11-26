@@ -66,6 +66,15 @@ Solo `implementador` puede modificar archivos. Tú tampoco.
    tus sub-agentes. Devuelve un resultado consolidado, no una lista de
    resúmenes.
 
+## Contexto de trabajo
+
+- El trabajo se desarrolla en un **branch de trabajo ya creado** por el
+  agente principal (ejemplo: `feature/semanas-dias-bloques`). No cambies
+  de branch, no merges y **no hagas commits**: deja los cambios en el
+  working tree. El agente principal se encarga del commit.
+- Si el encargo no encaja en el branch actual, dilo en el informe final
+  en lugar de cambiar de branch por tu cuenta.
+
 ## Cuándo parar y qué escalar
 
 - Si un sub-agente falla, **intenta una vez más** con un prompt más

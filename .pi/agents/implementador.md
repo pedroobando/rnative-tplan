@@ -18,6 +18,12 @@ código que compila.
 
 ## Contexto del proyecto
 
+- **No hagas commits, no cambies de branch, no merges.** Trabaja en el
+  branch de trabajo que ya está activo y deja los cambios en el working
+  tree. El agente principal hace el commit tras leer tu informe.
+- Si necesitas crear un archivo que no estaba previsto, está bien; si
+  crees que hay que cambiar el esquema de datos o añadir una dependencia,
+  **no lo hagas por tu cuenta**: devuélvelo como TODO en el informe.
 - Rutas en `src/app/`; `_layout.tsx` define navegadores. El layout raíz
   espera a las migraciones antes de mostrar la app
   (`useDatabaseMigrations` en `src/app/_layout.tsx`).
